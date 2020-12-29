@@ -13,9 +13,6 @@ namespace LoggerScripts{
 public class LogToConsoleHelper : MonoBehaviour
 {
 	public int session_id = 0;
-
-	//public string responseheader = "";
-	//public string ishttperror = "";
 	public string receivedTextPost = "";
 	public string receivedTextGet = "";
 	public string receivedTextSession = "";

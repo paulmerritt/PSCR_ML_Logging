@@ -14,26 +14,23 @@ using System.Linq;
 //used for the laser pointer
 namespace LoggerScripts{
 public class Control6DOF : MonoBehaviour {
-    #region Private Variables
     
     private const float _triggerThreshold = 0.2f;
     private MLInput.Controller _controller;
     private string[] text;
-
-    #endregion
-
+    private LogToConsoleHelper consoler = new LogToConsoleHelper();
+    private float elapsed = 0.0f;
     
     public bool _triggerPressed = false;
     public bool _bumperPressed = false;
     public bool _homePressed = false;
-    private LogToConsoleHelper consoler = new LogToConsoleHelper();
-
+    
     #region Unity Methods
     void Start()
     {
         MLInput.Start();
-        MLInput.OnControllerButtonDown += OnButtonDown;
-        MLInput.OnControllerButtonUp += OnButtonUp;
+        MLInput.OnControllerButtonDown += HandleOnButtonDown;
+        MLInput.OnControllerButtonUp += HandleOnButtonUp;
         _controller = MLInput.GetController(MLInput.Hand.Left);
         text = new string[5];
         LogToFileHelper logger = new LogToFileHelper();
@@ -46,28 +43,52 @@ public class Control6DOF : MonoBehaviour {
 
 
 
-    void OnButtonDown(byte controller_id, MLInput.Controller.Button button)
+    void HandleOnButtonDown(byte controller_id, MLInput.Controller.Button button)
     {
         if (button == MLInput.Controller.Button.HomeTap)
         {
             _homePressed = true;
+            LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+            j.entry_id = 1;
+            j.message_data = "HOME PRESSED";
+            j.time_created = ""+System.DateTime.Now;
+            j.category = "External";
+            
+
+            string s = "[" + JsonUtility.ToJson(j) + "]";
+            //log pressed trigger
+            if (consoler.session_id != 0){
+                StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+            }
         }
-        if (button == MLInput.Controller.Button.Bumper)
-        {
-            _bumperPressed = true;
-        }
+        // else if (button == MLInput.Controller.Button.Bumper)
+        // {
+        //     _bumperPressed = true;
+        //     LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+        //     j.entry_id = 1;
+        //     j.message_data = "BUMPER PRESSED";
+        //     j.time_created = ""+System.DateTime.Now;
+        //     j.category = "External";
+            
+
+        //     string s = "[" + JsonUtility.ToJson(j) + "]";
+        //     //log pressed trigger
+        //     if (consoler.session_id != 0){
+        //         StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+        //     }
+        // }
         
     }
 
-    void OnButtonUp(byte controllerId, MLInput.Controller.Button button) {
+    void HandleOnButtonUp(byte controllerId, MLInput.Controller.Button button) {
         if (button == MLInput.Controller.Button.HomeTap)
         {
            _homePressed = false;
         }
-        if (button == MLInput.Controller.Button.Bumper)
-        {
-            _bumperPressed = false;
-        }
+        // if (button == MLInput.Controller.Button.Bumper)
+        // {
+        //     _bumperPressed = false; 
+        // }
     }
     
 
@@ -107,7 +128,11 @@ public class Control6DOF : MonoBehaviour {
             _triggerPressed = false;
         }
 
-        if(_bumperPressed == true){
+        if(_controller.IsBumperDown){
+            _bumperPressed = true;
+            
+        }
+        else if (!_controller.IsBumperDown && _bumperPressed == true){
             LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
             j.entry_id = 1;
             j.message_data = "BUMPER PRESSED";
@@ -120,21 +145,7 @@ public class Control6DOF : MonoBehaviour {
             if (consoler.session_id != 0){
                 StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
             }
-        }
-
-        if(_homePressed == true){
-            LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
-            j.entry_id = 1;
-            j.message_data = "HOME PRESSED";
-            j.time_created = ""+System.DateTime.Now;
-            j.category = "External";
-            
-
-            string s = "[" + JsonUtility.ToJson(j) + "]";
-            //log pressed trigger
-            if (consoler.session_id != 0){
-                StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
-            }
+            _bumperPressed = false;
         }
 
         text[0] = "Controller Position: " + transform.position;        
@@ -148,8 +159,8 @@ public class Control6DOF : MonoBehaviour {
     void OnDestroy()
     {
         MLInput.Stop();
-        MLInput.OnControllerButtonDown -= OnButtonDown;
-        MLInput.OnControllerButtonUp -= OnButtonUp;
+        MLInput.OnControllerButtonDown -= HandleOnButtonDown;
+        MLInput.OnControllerButtonUp -= HandleOnButtonUp;
     }
 
     

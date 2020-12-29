@@ -10,22 +10,16 @@ namespace LoggerScripts{
 
 public class TouchpadGestures : MonoBehaviour {
 
-    #region Public Variables
     private string[] text;
-    public Camera Camera;
-    #endregion
-
-    #region Private Variables
+    private GameObject camera;
     private MLInput.Controller _controller;
-    #endregion
-
     private LogToConsoleHelper consoler = new LogToConsoleHelper();
-    
-	public int session_id = 0;
+    private float elapsed = 0.0f;
 
     #region Unity Methods
     void Start() {
         MLInput.Start();
+        camera = GameObject.FindWithTag("MainCamera");
         _controller = MLInput.GetController(MLInput.Hand.Left);
         text = new string[4];
         text[0] = "default"; 
@@ -46,43 +40,50 @@ public class TouchpadGestures : MonoBehaviour {
         
 
     void Update(){
-        float speed = Time.deltaTime * 5.0f;
+        elapsed += Time.deltaTime;
+        if (elapsed >= LoggingConfig.frequency) {
+            elapsed = elapsed % LoggingConfig.frequency;
+            
 
-        Vector3 pos = Camera.transform.position + Camera.transform.forward;
-        gameObject.transform.position = Vector3.SlerpUnclamped(gameObject.transform.position, pos, speed);
+            float speed = Time.deltaTime * 5.0f;
 
-        Quaternion rot = Quaternion.LookRotation(gameObject.transform.position - Camera.transform.position);
-        gameObject.transform.rotation = Quaternion.Slerp(gameObject.transform.rotation, rot, speed);
+            Vector3 pos = camera.transform.position + camera.transform.forward;
+            gameObject.transform.position = Vector3.SlerpUnclamped(gameObject.transform.position, pos, speed);
 
-
-        string gestureType = _controller.CurrentTouchpadGesture.Type.ToString();
-        string gestureState = _controller.TouchpadGestureState.ToString();
-        string gestureDirection = _controller.CurrentTouchpadGesture.Direction.ToString();
+            Quaternion rot = Quaternion.LookRotation(gameObject.transform.position - camera.transform.position);
+            gameObject.transform.rotation = Quaternion.Slerp(gameObject.transform.rotation, rot, speed);
 
 
-        text[0] = "Type: " + gestureType;
+            string gestureType = _controller.CurrentTouchpadGesture.Type.ToString();
+            string gestureState = _controller.TouchpadGestureState.ToString();
+            string gestureDirection = _controller.CurrentTouchpadGesture.Direction.ToString();
 
-        text[1] = "State: " + gestureState;
 
-        text[2] = "Direction: " + gestureDirection;
+            text[0] = "Type: " + gestureType;
 
-        try{
-                LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
-                j.entry_id = 1;
-			    j.message_data = text[0] + text[1] + text[2];
-			    j.time_created = ""+System.DateTime.Now;
-			    j.category = "External";
-                 
-                string s = "[" + JsonUtility.ToJson(j) + "]";
-                //post any touchpad gestures to session
-                if (consoler.session_id != 0){
-                    StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+            text[1] = "State: " + gestureState;
+
+            text[2] = "Direction: " + gestureDirection;
+
+            try{
+                    LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+                    j.entry_id = 1;
+                    j.message_data = text[0] + text[1] + text[2];
+                    j.time_created = ""+System.DateTime.Now;
+                    j.category = "External";
+                    
+                    string s = "[" + JsonUtility.ToJson(j) + "]";
+                    //post any touchpad gestures to session
+                    if (consoler.session_id != 0){
+                        StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                    }
+                    text[3] = consoler.receivedTextPost;
                 }
-                text[3] = consoler.receivedTextPost;
+                catch (Exception e){
+                    text[3] = e.ToString();
+                }
             }
-            catch (Exception e){
-                text[3] = e.ToString();
-            }
+        
     }
     #endregion
 

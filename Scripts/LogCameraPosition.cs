@@ -6,16 +6,16 @@ using System;
 namespace LoggerScripts{
     public class LogCameraPosition : MonoBehaviour
     {
-        // Start is called before the first frame update
+
         private string[] text;
         private LogToConsoleHelper consoler = new LogToConsoleHelper();
-
-        public int session_id = 0;
+        private GameObject camera;
 
         void Start()
         {
             text = new string[3];
             LogToFileHelper logger = new LogToFileHelper();
+            camera = GameObject.FindWithTag("MainCamera");
             //establishing logger for storing interactions locally as a backup
             StartCoroutine(logger.LogToFileStringArray("log_camera.json", text));
             //creating new session
@@ -25,8 +25,8 @@ namespace LoggerScripts{
         // Update is called once per frame
         void Update()
         {
-            text[0] = "" + GameObject.Find("Main Camera").transform.position;
-            text[1] = "" + GameObject.Find("Main Camera").transform.rotation;
+            text[0] = "" + camera.transform.position;
+            text[1] = "" + camera.transform.rotation;
             try{
                 LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
                 j.entry_id = 1;

@@ -54,7 +54,7 @@ public class LogToFileHelper : MonoBehaviour
             if (file_name.Contains(".json")){
                 s = "{\"" + s + "\"}";
             }
-             yield return new WaitForSeconds(.5f);
+             yield return new WaitForSeconds(LoggingConfig.frequency);
              SaveFile(file_name, s);
          }
     }
@@ -70,7 +70,7 @@ public class LogToFileHelper : MonoBehaviour
             if (file_name.Contains(".json")){
                 s = "{\"" + s + "\"}";
             }
-             yield return new WaitForSeconds(.5f);
+             yield return new WaitForSeconds(LoggingConfig.frequency);
              SaveFile(file_name, s);
          }
     }
@@ -79,7 +79,7 @@ public class LogToFileHelper : MonoBehaviour
     {
         while (true){
             string s = "\""+str+"\"";
-            yield return new WaitForSeconds(.5f);
+            yield return new WaitForSeconds(LoggingConfig.frequency);
             SaveFile(file_name, s);
         }
     }
@@ -87,7 +87,7 @@ public class LogToFileHelper : MonoBehaviour
     public IEnumerator LogToFile(string file_name, string _data)
     {
         while (true) {
-             yield return new WaitForSeconds(.5f);
+             yield return new WaitForSeconds(LoggingConfig.frequency);
              SaveFile(file_name, _data);
          }
     }

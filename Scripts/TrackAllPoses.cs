@@ -12,7 +12,6 @@ using UnityEngine.UI;
     {
         private const float CONFIDENCE_THRESHOLD = 0.95f;
 
-
         [Space, SerializeField, Tooltip("Flag to specify if left hand should be tracked.")]
         private bool _trackLeftHand = true;
 
@@ -21,7 +20,6 @@ using UnityEngine.UI;
 
         private string[] cur_pose;
         private LogToConsoleHelper consoler = new LogToConsoleHelper();
-
 	    public int session_id = 0;
 
         /// <summary>
@@ -90,7 +88,7 @@ using UnityEngine.UI;
 
                 float confidenceValue = Mathf.Max(confidenceLeft, confidenceRight);
                 PostPoseToConsole(cur_pose[0]);
-                yield return new WaitForSeconds(1f);
+                yield return new WaitForSeconds(LoggingConfig.frequency);
                 
             }
         }
