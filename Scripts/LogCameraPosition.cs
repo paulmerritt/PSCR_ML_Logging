@@ -1,55 +1,74 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 using System;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
 namespace LoggerScripts{
     public class LogCameraPosition : MonoBehaviour
     {
-
-        private string[] text;
-        private LogToConsoleHelper consoler = new LogToConsoleHelper();
+        private string[] headpose;
         private GameObject camera;
+        private LogToConsoleHelper consoler = new LogToConsoleHelper();
+        private float elapsed = 0.0f;
+        private Scene scn; 
+        private string sceneName;
+        private bool sceneSelected = false;
 
-        void Start()
-        {
-            text = new string[3];
-            LogToFileHelper logger = new LogToFileHelper();
+        #region Unity Methods
+        void Start() {
+            
             camera = GameObject.FindWithTag("MainCamera");
+            
+            headpose = new string[2];
+            LogToFileHelper logger = new LogToFileHelper();
             //establishing logger for storing interactions locally as a backup
-            StartCoroutine(logger.LogToFileStringArray("log_camera.json", text));
+            StartCoroutine(logger.LogToFileStringArray("log_headpose.json", headpose));
             //creating new session
-            StartCoroutine(consoler.NewSession("http://"+LoggingConfig.ip_address+":57000/ext/"+ LoggingConfig.api_key + "/new_session"));
-        }
+            scn = SceneManager.GetActiveScene();
+            sceneName = scn.name;
+            StartCoroutine(consoler.NewSession("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key + "/new_session"));
+        }    
+        private void OnDisable() {
+        
+        } 
+        
+        void Update() {
 
-        // Update is called once per frame
-        void Update()
-        {
-            text[0] = "" + camera.transform.position;
-            text[1] = "" + camera.transform.rotation;
-            try{
+            if (SceneManager.GetActiveScene().name != sceneName && !sceneSelected){
                 LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
                 j.entry_id = 1;
-                j.message_data = "camera position: " + text[0];
+                j.message_data = "Scene is: " + SceneManager.GetActiveScene().name;
                 j.time_created = ""+System.DateTime.Now;
                 j.category = "External";
                 string s = "[" + JsonUtility.ToJson(j) + "]";
-                //post current camera position to session
-                if (consoler.session_id != 0){
-                        StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":57000/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
-                }
-                text[3] = consoler.receivedTextPost;
+                StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                sceneSelected = true;
             }
-            catch (Exception e){
-                text[3] = e.ToString();
-            }
-        }
-        IEnumerator checkCamera(){
-            while (true){
+
+            elapsed += Time.deltaTime;
+            if (elapsed >= LoggingConfig.frequency) {
+                elapsed = elapsed % LoggingConfig.frequency;
+                    headpose[0] = "" + camera.transform.position;
+                    
+                    LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+                    j.entry_id = 1;
+                    j.message_data = "headpose: " + headpose[0];
+                    j.time_created = ""+System.DateTime.Now;
+                    j.category = "External";
+                    
+
+                    string s = "[" + JsonUtility.ToJson(j) + "]";
+                    //post where eyes are currently looking
+                    if (consoler.session_id != 0){
+                        StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                    }
+                    
+                    
                 
-                yield return new WaitForSeconds(1f);
             }
-            
         }
+        #endregion
     }
 }

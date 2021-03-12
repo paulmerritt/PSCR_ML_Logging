@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
     
     namespace LoggerScripts{
     public class TrackAllPoses : MonoBehaviour
@@ -21,6 +22,9 @@ using UnityEngine.UI;
         private string[] cur_pose;
         private LogToConsoleHelper consoler = new LogToConsoleHelper();
 	    public int session_id = 0;
+        private Scene scn; 
+        private string sceneName;
+        private bool sceneSelected = false;
 
         /// <summary>
         /// Calls Start on MLHandTrackingStarterKit.
@@ -38,8 +42,12 @@ using UnityEngine.UI;
             }
             #endif
             cur_pose = new string[2];
-            cur_pose[0] = "def";
+            //cur_pose[0] = "def";
             LogToFileHelper logger = new LogToFileHelper();
+
+            scn = SceneManager.GetActiveScene();
+            sceneName = scn.name;
+
             //establishing logger for storing interactions locally as a backup
             StartCoroutine(logger.LogToFileStringArray("log_poses.json", cur_pose));
             //creating new session
@@ -62,13 +70,25 @@ using UnityEngine.UI;
         /// </summary>
         void Update()
         {
-            
+            if (SceneManager.GetActiveScene().name != sceneName && !sceneSelected){
+                    LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+                    j.entry_id = 1;
+                    j.message_data = "Scene is: " + SceneManager.GetActiveScene().name;
+                    j.time_created = ""+System.DateTime.Now;
+                    j.category = "External";
+                    string s = "[" + JsonUtility.ToJson(j) + "]";
+                    StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                    sceneSelected = true;
+                }
         }
 
 
         IEnumerator checkHands(){
 
             while (true) {
+
+                
+
                 float confidenceLeft =  0.0f;
                 float confidenceRight = 0.0f;
 

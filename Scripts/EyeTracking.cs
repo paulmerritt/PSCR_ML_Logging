@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.MagicLeap;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 namespace LoggerScripts{
 public class EyeTracking : MonoBehaviour {
@@ -13,6 +14,9 @@ public class EyeTracking : MonoBehaviour {
     private string[] eyes;
     private LogToConsoleHelper consoler = new LogToConsoleHelper();
     private float elapsed = 0.0f;
+    private Scene scn; 
+    private string sceneName;
+    private bool sceneSelected = false;
 
     #region Unity Methods
     void Start() {
@@ -21,6 +25,10 @@ public class EyeTracking : MonoBehaviour {
         transform.position = camera.transform.position + camera.transform.forward * 5.0f;
         eyes = new string[2];
         LogToFileHelper logger = new LogToFileHelper();
+
+        scn = SceneManager.GetActiveScene();
+        sceneName = scn.name;
+
         //establishing logger for storing interactions locally as a backup
         StartCoroutine(logger.LogToFileStringArray("log_eye.json", eyes));
         //creating new session
@@ -34,6 +42,18 @@ public class EyeTracking : MonoBehaviour {
         elapsed += Time.deltaTime;
         if (elapsed >= LoggingConfig.frequency) {
             elapsed = elapsed % LoggingConfig.frequency;
+
+            if (SceneManager.GetActiveScene().name != sceneName && !sceneSelected){
+                    LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+                    j.entry_id = 1;
+                    j.message_data = "Scene is: " + SceneManager.GetActiveScene().name;
+                    j.time_created = ""+System.DateTime.Now;
+                    j.category = "External";
+                    string s = "[" + JsonUtility.ToJson(j) + "]";
+                    StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                    sceneSelected = true;
+                }
+
             if (MLEyes.IsStarted) {
                 
                 RaycastHit rayHit;

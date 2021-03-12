@@ -62,9 +62,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 348b2ebd03170b64a9c9e7747588adfa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _triggerPressed: 0
-  _bumperPressed: 0
-  _homePressed: 0
 --- !u!114 &9047253434166421252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -144,4 +141,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _trackLeftHand: 1
   _trackRightHand: 1
-  session_id: 0

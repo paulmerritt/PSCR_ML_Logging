@@ -10,6 +10,7 @@ using System.Text;
 using UnityEngine.Assertions;
 using Newtonsoft.Json;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 //used for the laser pointer
 namespace LoggerScripts{
@@ -25,6 +26,10 @@ public class Control6DOF : MonoBehaviour {
     public bool _bumperPressed = false;
     public bool _homePressed = false;
     
+    private Scene scn; 
+    private string sceneName;
+    private bool sceneSelected = false;
+    
     #region Unity Methods
     void Start()
     {
@@ -33,6 +38,10 @@ public class Control6DOF : MonoBehaviour {
         MLInput.OnControllerButtonUp += HandleOnButtonUp;
         _controller = MLInput.GetController(MLInput.Hand.Left);
         text = new string[5];
+
+        scn = SceneManager.GetActiveScene();
+        sceneName = scn.name;
+
         LogToFileHelper logger = new LogToFileHelper();
         //establishing logger for storing interactions locally as a backup
         StartCoroutine(logger.LogToFileStringArray("log_controller.json", text));
@@ -95,6 +104,17 @@ public class Control6DOF : MonoBehaviour {
     void Update () {
         transform.position = _controller.Position;
         transform.rotation = _controller.Orientation;    
+
+        if (SceneManager.GetActiveScene().name != sceneName && !sceneSelected){
+                    LogToConsoleHelper.jsn_sent j = new LogToConsoleHelper.jsn_sent();
+                    j.entry_id = 1;
+                    j.message_data = "Scene is: " + SceneManager.GetActiveScene().name;
+                    j.time_created = ""+System.DateTime.Now;
+                    j.category = "External";
+                    string s = "[" + JsonUtility.ToJson(j) + "]";
+                    StartCoroutine(consoler.PostRequest("http://"+LoggingConfig.ip_address+":" + LoggingConfig.port +"/ext/"+ LoggingConfig.api_key+"/"+consoler.session_id, s));
+                    sceneSelected = true;
+                }
 
         //if trigger value goes above the threshold, it was pressed
         if (_controller.TriggerValue > _triggerThreshold) {
